@@ -1,0 +1,13 @@
+{
+  "name": "verdant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Verdant — personal finance tracker. Tooling root; the app lives in web/ and server/.",
+  "type": "module",
+  "scripts": {
+    "shot": "node screenshot.mjs"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.10.0"
+  }
+}

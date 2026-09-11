@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+temporary screenshots/
+
+# Editor / IDE
+.idea/
+
+# Claude Code project config (local instructions, not shared via git)
+.claude/
+
+# Design-workflow helper scripts (local tooling, not app code)
+screenshot.mjs
