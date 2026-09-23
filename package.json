@@ -5,9 +5,12 @@
   "description": "Verdant — personal finance tracker. Tooling root; the app lives in web/ and server/.",
   "type": "module",
   "scripts": {
-    "shot": "node screenshot.mjs"
+    "shot": "node screenshot.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "prettier": "^3.9.9",
     "puppeteer": "^25.10.0"
   }
 }
