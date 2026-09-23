@@ -6,7 +6,11 @@
  *   npm run seed
  */
 const API = process.env.API ?? 'http://localhost:4000/api';
-const CREDENTIALS = { fullName: 'Filip Milanov', username: 'filip', password: 'verdant123' };
+const CREDENTIALS = {
+  fullName: 'Filip Milanov',
+  username: 'filip',
+  password: 'verdant123',
+};
 
 async function call(path, { method = 'GET', body, token } = {}) {
   const response = await fetch(`${API}${path}`, {
@@ -19,7 +23,10 @@ async function call(path, { method = 'GET', body, token } = {}) {
   });
   if (response.status === 204) return null;
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`${method} ${path} → ${response.status}: ${payload?.error}`);
+  if (!response.ok)
+    throw new Error(
+      `${method} ${path} → ${response.status}: ${payload?.error}`
+    );
   return payload;
 }
 
@@ -31,7 +38,9 @@ function daysAgo(n) {
 }
 
 const session =
-  (await call('/auth/register', { method: 'POST', body: CREDENTIALS }).catch(() => null)) ??
+  (await call('/auth/register', { method: 'POST', body: CREDENTIALS }).catch(
+    () => null
+  )) ??
   (await call('/auth/login', {
     method: 'POST',
     body: { username: CREDENTIALS.username, password: CREDENTIALS.password },
@@ -54,7 +63,12 @@ await call(`/accounts/${cash.id}`, {
 });
 
 for (const account of [
-  { name: 'Everyday card', kind: 'card', currency: 'EUR', openingBalance: 1840 },
+  {
+    name: 'Everyday card',
+    kind: 'card',
+    currency: 'EUR',
+    openingBalance: 1840,
+  },
   { name: 'Savings', kind: 'savings', currency: 'EUR', openingBalance: 6200 },
 ]) {
   await call('/accounts', { method: 'POST', token, body: account });
@@ -74,7 +88,14 @@ const expenses = [
   ['Laundry', 'Germany', 9, 12.0, 'Cash', ''],
   ['Groceries', 'Germany', 11, 91.35, 'Everyday card', ''],
   ['Rent', 'Germany', 14, 950.0, 'Everyday card', 'September'],
-  ['Utilities', 'Germany', 16, 118.4, 'Everyday card', 'Electricity and internet'],
+  [
+    'Utilities',
+    'Germany',
+    16,
+    118.4,
+    'Everyday card',
+    'Electricity and internet',
+  ],
   ['Travel', 'Netherlands', 22, 240.0, 'Everyday card', 'Weekend in Utrecht'],
   ['Eating out', 'Netherlands', 23, 56.8, 'Cash', ''],
   ['Car', 'Germany', 34, 210.0, 'Everyday card', 'Winter tyres'],
@@ -127,6 +148,6 @@ for (const [category, from, ago, amount, account, comment] of incomes) {
   });
 }
 
-const dashboard = await call('/dashboard', { token });
-console.log(`Seeded. Net worth: ${dashboard.netWorth.toFixed(2)} EUR`);
+// const dashboard = await call('/dashboard', { token });
+// console.log(`Seeded. Net worth: ${dashboard.netWorth.toFixed(2)} EUR`);
 console.log(`Sign in with ${CREDENTIALS.username} / ${CREDENTIALS.password}`);
