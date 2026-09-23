@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: verdant
       POSTGRES_DB: verdant
     ports:
-      - "5432:5432"
+      - "5433:5432" # Change the host port to 5433 to avoid conflicts with local PostgreSQL installations
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +17,8 @@ services:
       timeout: 5s
       retries: 10
 
+  # TODO: We dont need pgadmin in production, so we can remove it from the docker-compose file and use a local installation instead.
+  # TODO: Remove pgadmin folder as well
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: verdant-pgadmin
