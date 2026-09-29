@@ -4,12 +4,16 @@ import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import runner from 'node-pg-migrate';
+import 'dotenv/config';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const direction = process.argv[2] === 'down' ? 'down' : 'up';
 
-const databaseUrl =
-  process.env.DATABASE_URL ?? 'postgres://verdant:verdant@localhost:5432/verdant';
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('Missing DATABASE_URL env var');
+  process.exit(1);
+}
 
 try {
   const applied = await runner({
@@ -23,7 +27,10 @@ try {
   if (applied.length === 0) {
     console.log('Database already up to date.');
   } else {
-    console.log(`Migrated ${direction}:`, applied.map((m) => m.name).join(', '));
+    console.log(
+      `Migrated ${direction}:`,
+      applied.map((m) => m.name).join(', ')
+    );
   }
   process.exit(0);
 } catch (err) {

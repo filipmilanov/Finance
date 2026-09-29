@@ -5,12 +5,10 @@
  *
  *   npm run seed
  */
+import 'dotenv/config';
 const API = process.env.API ?? 'http://localhost:4000/api';
-const CREDENTIALS = {
-  fullName: 'Filip Milanov',
-  username: 'filip',
-  password: 'verdant123',
-};
+const CREDENTIALS = JSON.parse(process.env.CREDENTIALS);
+if (!CREDENTIALS) throw new Error('Missing CREDENTIALS env var');
 
 async function call(path, { method = 'GET', body, token } = {}) {
   const response = await fetch(`${API}${path}`, {
@@ -148,6 +146,4 @@ for (const [category, from, ago, amount, account, comment] of incomes) {
   });
 }
 
-// const dashboard = await call('/dashboard', { token });
-// console.log(`Seeded. Net worth: ${dashboard.netWorth.toFixed(2)} EUR`);
 console.log(`Sign in with ${CREDENTIALS.username} / ${CREDENTIALS.password}`);

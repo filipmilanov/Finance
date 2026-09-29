@@ -1,9 +1,16 @@
 import 'dotenv/config';
 
 /** Treats a blank env var as absent — an exported-but-empty PORT should not win. */
-function env(name: string, fallback: string): string {
+function env(name: string): string {
   const value = process.env[name];
-  return value && value.trim() !== '' ? value.trim() : fallback;
+  if (value === undefined) {
+    console.warn(`Warning: Environment variable ${name} is not set.`);
+    return '';
+  } else if (value.trim() === '') {
+    console.warn(`Warning: Environment variable ${name} is set but empty.`);
+    return '';
+  }
+  return value.trim();
 }
 
 /**
@@ -11,8 +18,10 @@ function env(name: string, fallback: string): string {
  * the Vite proxy's fixed :4000 target miss. Only a real port number is honoured.
  */
 function port(fallback: number): number {
-  const value = Number(env('PORT', String(fallback)));
-  return Number.isInteger(value) && value > 0 && value < 65536 ? value : fallback;
+  const value = Number(env('PORT')) ?? fallback;
+  return Number.isInteger(value) && value > 0 && value < 65536
+    ? value
+    : fallback;
 }
 
 /**
@@ -20,8 +29,8 @@ function port(fallback: number): number {
  * server runs with no .env at all. Create server/.env to override any of these.
  */
 export const config = {
-  databaseUrl: env('DATABASE_URL', 'postgres://verdant:verdant@localhost:5432/verdant'),
-  jwtSecret: env('JWT_SECRET', 'verdant-dev-secret-change-in-production'),
+  databaseUrl: env('DATABASE_URL'),
+  jwtSecret: env('JWT_SECRET'),
   port: port(4000),
-  clientOrigin: env('CLIENT_ORIGIN', 'http://localhost:5173'),
+  clientOrigin: env('CLIENT_ORIGIN'),
 };
