@@ -11,11 +11,11 @@ categoriesRouter.get('/', async (req, res, next) => {
       kind === 'expense' || kind === 'income'
         ? await query(
             'SELECT id, name, kind FROM categories WHERE user_id = $1 AND kind = $2 ORDER BY name',
-            [req.user!.id, kind],
+            [req.user!.id, kind]
           )
         : await query(
             'SELECT id, name, kind FROM categories WHERE user_id = $1 ORDER BY kind, name',
-            [req.user!.id],
+            [req.user!.id]
           );
     res.json(rows);
   } catch (err) {
@@ -38,7 +38,7 @@ categoriesRouter.post('/', async (req, res, next) => {
     const existing = await one<{ id: number; name: string; kind: string }>(
       `SELECT id, name, kind FROM categories
        WHERE user_id = $1 AND kind = $2 AND lower(name) = lower($3)`,
-      [req.user!.id, parsed.data.kind, parsed.data.name],
+      [req.user!.id, parsed.data.kind, parsed.data.name]
     );
     // Adding a category you already have is not an error worth blocking a
     // form submit over — hand back the existing one.
@@ -47,7 +47,7 @@ categoriesRouter.post('/', async (req, res, next) => {
     const created = await one(
       `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, $3)
        RETURNING id, name, kind`,
-      [req.user!.id, parsed.data.name, parsed.data.kind],
+      [req.user!.id, parsed.data.name, parsed.data.kind]
     );
     res.status(201).json(created);
   } catch (err) {
@@ -63,15 +63,17 @@ categoriesRouter.delete('/:id', async (req, res, next) => {
          UNION ALL
          SELECT category_id FROM incomes  WHERE category_id = $1
        ) t LIMIT 1`,
-      [req.params.id],
+      [req.params.id]
     );
     if (inUse) {
-      return res.status(409).json({ error: 'This category is used by existing entries.' });
+      return res
+        .status(409)
+        .json({ error: 'This category is used by existing entries.' });
     }
 
     const deleted = await one(
       'DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.user!.id],
+      [req.params.id, req.user!.id]
     );
     if (!deleted) return res.status(404).json({ error: 'Category not found.' });
     res.status(204).end();

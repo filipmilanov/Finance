@@ -27,7 +27,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const payload = jwt.verify(token, config.jwtSecret) as AuthUser;
-    req.user = { id: payload.id, username: payload.username, fullName: payload.fullName };
+    req.user = {
+      id: payload.id,
+      username: payload.username,
+      fullName: payload.fullName,
+    };
     next();
   } catch {
     res.status(401).json({ error: 'Your session expired. Sign in again.' });

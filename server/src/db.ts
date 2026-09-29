@@ -9,7 +9,7 @@ export const pool = new pg.Pool({ connectionString: config.databaseUrl });
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   text: string,
-  params: unknown[] = [],
+  params: unknown[] = []
 ): Promise<T[]> {
   const result = await pool.query<T>(text, params);
   return result.rows;
@@ -17,14 +17,14 @@ export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
 
 export async function one<T extends pg.QueryResultRow = pg.QueryResultRow>(
   text: string,
-  params: unknown[] = [],
+  params: unknown[] = []
 ): Promise<T | undefined> {
   const rows = await query<T>(text, params);
   return rows[0];
 }
 
 export async function transaction<T>(
-  fn: (client: pg.PoolClient) => Promise<T>,
+  fn: (client: pg.PoolClient) => Promise<T>
 ): Promise<T> {
   const client = await pool.connect();
   try {

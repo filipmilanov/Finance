@@ -20,10 +20,19 @@ export function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/accounts" element={<Accounts />} />
-          <Route path="/transactions" element={<Navigate to="/transactions/expenses" replace />} />
+          <Route
+            path="/transactions"
+            element={<Navigate to="/transactions/expenses" replace />}
+          />
           <Route path="/transactions/:kind" element={<Transactions />} />
-          <Route path="/expenses" element={<Navigate to="/transactions/expenses" replace />} />
-          <Route path="/income" element={<Navigate to="/transactions/income" replace />} />
+          <Route
+            path="/expenses"
+            element={<Navigate to="/transactions/expenses" replace />}
+          />
+          <Route
+            path="/income"
+            element={<Navigate to="/transactions/income" replace />}
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ShellMain>

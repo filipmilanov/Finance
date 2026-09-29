@@ -27,7 +27,8 @@ const PAGES = [
 export function Header() {
   const { user, signOut } = useAuth();
   const { mode, toggle } = useThemeMode();
-  const nextTheme = mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+  const nextTheme =
+    mode === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
 
   return (
     <HeaderBar elevation={0}>
@@ -46,7 +47,11 @@ export function Header() {
 
         <HeaderEnd>
           <ThemeToggle>
-            <IconButton onClick={toggle} aria-label={nextTheme} title={nextTheme}>
+            <IconButton
+              onClick={toggle}
+              aria-label={nextTheme}
+              title={nextTheme}
+            >
               {mode === 'dark' ? (
                 <LightModeOutlinedIcon fontSize="small" />
               ) : (
@@ -59,7 +64,11 @@ export function Header() {
             <>
               <UserChip>
                 <UserAvatar aria-hidden>{initials(user.fullName)}</UserAvatar>
-                <Typography component="span" variant="body2" className="user-name">
+                <Typography
+                  component="span"
+                  variant="body2"
+                  className="user-name"
+                >
                   {user.fullName}
                 </Typography>
               </UserChip>

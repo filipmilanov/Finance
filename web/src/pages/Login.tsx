@@ -60,8 +60,8 @@ export function Login() {
         <div>
           <AuthPitch component="h1">Every euro, accounted for.</AuthPitch>
           <AuthNote>
-            Log what you spend and what comes in, and Verdant works out where each account
-            actually stands.
+            Log what you spend and what comes in, and Verdant works out where
+            each account actually stands.
           </AuthNote>
         </div>
 

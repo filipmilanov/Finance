@@ -1,9 +1,20 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { createAppTheme, type ThemeMode } from '../theme/createAppTheme';
 
-const ThemeContext = createContext<{ mode: ThemeMode; toggle: () => void } | null>(null);
+const ThemeContext = createContext<{
+  mode: ThemeMode;
+  toggle: () => void;
+} | null>(null);
 
 function initialMode(): ThemeMode {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';

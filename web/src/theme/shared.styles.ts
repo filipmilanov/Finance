@@ -82,7 +82,7 @@ export const CategoryChip = styled(Chip, {
         borderColor: theme.app.brand.main,
         color: theme.app.brand.main,
       }
-    : {},
+    : {}
 );
 
 /** Right-aligned cell content, used for every amount column. */

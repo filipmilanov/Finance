@@ -11,7 +11,12 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import { api } from '../lib/api';
 import { money } from '../lib/format';
-import { ACCOUNT_KINDS, accountKindLabel, type Account, type AccountKind } from '../lib/types';
+import {
+  ACCOUNT_KINDS,
+  accountKindLabel,
+  type Account,
+  type AccountKind,
+} from '../lib/types';
 import { EmptyState, FormDialog, Loading, AlertSlot } from '../components/ui';
 import {
   Amount,
@@ -32,7 +37,12 @@ type Draft = {
   openingBalance: string;
 };
 
-const BLANK: Draft = { name: '', kind: 'cash', currency: 'EUR', openingBalance: '0' };
+const BLANK: Draft = {
+  name: '',
+  kind: 'cash',
+  currency: 'EUR',
+  openingBalance: '0',
+};
 
 export function Accounts() {
   const [accounts, setAccounts] = useState<Account[] | null>(null);
@@ -75,7 +85,10 @@ export function Accounts() {
     setBusy(true);
     setFormError('');
     try {
-      const body = { ...draft, openingBalance: Number(draft.openingBalance || 0) };
+      const body = {
+        ...draft,
+        openingBalance: Number(draft.openingBalance || 0),
+      };
       if (editing) {
         await api(`/accounts/${editing.id}`, { method: 'PUT', body });
       } else {
@@ -84,7 +97,9 @@ export function Accounts() {
       setOpen(false);
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Could not save the account.');
+      setFormError(
+        err instanceof Error ? err.message : 'Could not save the account.'
+      );
     } finally {
       setBusy(false);
     }
@@ -96,7 +111,9 @@ export function Accounts() {
       await api(`/accounts/${account.id}`, { method: 'DELETE' });
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete the account.');
+      setError(
+        err instanceof Error ? err.message : 'Could not delete the account.'
+      );
     }
   }
 
@@ -112,7 +129,8 @@ export function Accounts() {
         <div>
           <PageTitle component="h1">Accounts</PageTitle>
           <Lede variant="body2">
-            Each balance is your opening amount plus everything in, minus everything out.
+            Each balance is your opening amount plus everything in, minus
+            everything out.
           </Lede>
         </div>
         <Button variant="contained" onClick={openNew}>
@@ -152,7 +170,10 @@ export function Accounts() {
                   <LedgerRow key={account.id} hover>
                     <TableCell>{account.name}</TableCell>
                     <TableCell>
-                      <CategoryChip label={accountKindLabel(account.kind)} size="small" />
+                      <CategoryChip
+                        label={accountKindLabel(account.kind)}
+                        size="small"
+                      />
                     </TableCell>
                     <TableCell align="right">
                       <Amount component="span" color="text.secondary">
@@ -228,7 +249,9 @@ export function Accounts() {
               select
               label="Type"
               value={draft.kind}
-              onChange={(e) => setDraft({ ...draft, kind: e.target.value as AccountKind })}
+              onChange={(e) =>
+                setDraft({ ...draft, kind: e.target.value as AccountKind })
+              }
               size="small"
             >
               {ACCOUNT_KINDS.map((kind) => (
@@ -241,7 +264,9 @@ export function Accounts() {
             <TextField
               label="Currency"
               value={draft.currency}
-              onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })}
+              onChange={(e) =>
+                setDraft({ ...draft, currency: e.target.value.toUpperCase() })
+              }
               size="small"
               required
               slotProps={{ htmlInput: { maxLength: 3 } }}
@@ -251,7 +276,9 @@ export function Accounts() {
               label="Opening balance"
               type="number"
               value={draft.openingBalance}
-              onChange={(e) => setDraft({ ...draft, openingBalance: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, openingBalance: e.target.value })
+              }
               size="small"
               required
               slotProps={{ htmlInput: { step: '0.01' } }}

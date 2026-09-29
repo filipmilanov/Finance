@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -46,7 +52,12 @@ type EntryPageProps = {
   title: string;
   lede: string;
   /** Label and behaviour for the one column that differs between the two pages. */
-  textField: { name: 'country' | 'from'; label: string; placeholder: string; suggest?: string[] };
+  textField: {
+    name: 'country' | 'from';
+    label: string;
+    placeholder: string;
+    suggest?: string[];
+  };
   addLabel: string;
   emptyTitle: string;
   emptyHint: string;
@@ -64,7 +75,14 @@ type Draft = {
 const NEW_CATEGORY = '__new__';
 
 function blankDraft(): Draft {
-  return { date: today(), amount: '', accountId: '', categoryId: '', comment: '', text: '' };
+  return {
+    date: today(),
+    amount: '',
+    accountId: '',
+    categoryId: '',
+    comment: '',
+    text: '',
+  };
 }
 
 export function EntryPage(props: EntryPageProps) {
@@ -75,7 +93,12 @@ export function EntryPage(props: EntryPageProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
 
-  const [filters, setFilters] = useState({ accountId: '', categoryId: '', from: '', to: '' });
+  const [filters, setFilters] = useState({
+    accountId: '',
+    categoryId: '',
+    from: '',
+    to: '',
+  });
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Entry | null>(null);
@@ -93,7 +116,10 @@ export function EntryPage(props: EntryPageProps) {
   useEffect(loadEntries, [loadEntries]);
 
   const loadLookups = useCallback(() => {
-    Promise.all([api<Account[]>('/accounts'), api<Category[]>(`/categories?kind=${kind}`)])
+    Promise.all([
+      api<Account[]>('/accounts'),
+      api<Category[]>(`/categories?kind=${kind}`),
+    ])
       .then(([nextAccounts, nextCategories]) => {
         setAccounts(nextAccounts);
         setCategories(nextCategories);
@@ -105,13 +131,14 @@ export function EntryPage(props: EntryPageProps) {
 
   const total = useMemo(
     () => (entries ?? []).reduce((sum, entry) => sum + Number(entry.amount), 0),
-    [entries],
+    [entries]
   );
 
   const currency = accounts[0]?.currency ?? 'EUR';
   // The form prefix follows the account being paid from, not the first account.
   const selectedCurrency =
-    accounts.find((account) => String(account.id) === draft.accountId)?.currency ?? currency;
+    accounts.find((account) => String(account.id) === draft.accountId)
+      ?.currency ?? currency;
 
   function openNew() {
     setEditing(null);
@@ -177,7 +204,9 @@ export function EntryPage(props: EntryPageProps) {
       setOpen(false);
       loadEntries();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Could not save this entry.');
+      setFormError(
+        err instanceof Error ? err.message : 'Could not save this entry.'
+      );
     } finally {
       setBusy(false);
     }
@@ -189,12 +218,15 @@ export function EntryPage(props: EntryPageProps) {
       await api(`${path}/${entry.id}`, { method: 'DELETE' });
       loadEntries();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete the entry.');
+      setError(
+        err instanceof Error ? err.message : 'Could not delete the entry.'
+      );
     }
   }
 
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!entries) return <Loading label={`Loading ${props.title.toLowerCase()}`} />;
+  if (!entries)
+    return <Loading label={`Loading ${props.title.toLowerCase()}`} />;
 
   const noAccounts = accounts.length === 0;
   const flow = kind === 'expense' ? 'spend' : 'earn';
@@ -230,7 +262,9 @@ export function EntryPage(props: EntryPageProps) {
             select
             label="Account"
             value={filters.accountId}
-            onChange={(e) => setFilters({ ...filters, accountId: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, accountId: e.target.value })
+            }
             size="small"
           >
             <MenuItem value="">All accounts</MenuItem>
@@ -245,7 +279,9 @@ export function EntryPage(props: EntryPageProps) {
             select
             label="Category"
             value={filters.categoryId}
-            onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, categoryId: e.target.value })
+            }
             size="small"
           >
             <MenuItem value="">All categories</MenuItem>
@@ -320,7 +356,9 @@ export function EntryPage(props: EntryPageProps) {
                           flow={kind === 'income' ? 'earn' : undefined}
                         />
                       </TableCell>
-                      <TableCell>{(entry[textField.name] as string) || '—'}</TableCell>
+                      <TableCell>
+                        {(entry[textField.name] as string) || '—'}
+                      </TableCell>
                       <TableCell>{entry.accountName}</TableCell>
                       <TableCell>
                         <CommentCell>
@@ -383,7 +421,11 @@ export function EntryPage(props: EntryPageProps) {
               size="small"
               required
               slotProps={{
-                htmlInput: { step: '0.01', min: '0.01', 'data-autofocus': true },
+                htmlInput: {
+                  step: '0.01',
+                  min: '0.01',
+                  'data-autofocus': true,
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
@@ -398,7 +440,9 @@ export function EntryPage(props: EntryPageProps) {
               select
               label="Category"
               value={draft.categoryId}
-              onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, categoryId: e.target.value })
+              }
               size="small"
               required
             >
@@ -425,7 +469,9 @@ export function EntryPage(props: EntryPageProps) {
               select
               label="Account"
               value={draft.accountId}
-              onChange={(e) => setDraft({ ...draft, accountId: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, accountId: e.target.value })
+              }
               size="small"
               required
             >
@@ -441,10 +487,16 @@ export function EntryPage(props: EntryPageProps) {
                 freeSolo
                 options={textField.suggest}
                 value={draft.text}
-                onInputChange={(_, value) => setDraft({ ...draft, text: value })}
+                onInputChange={(_, value) =>
+                  setDraft({ ...draft, text: value })
+                }
                 size="small"
                 renderInput={(params) => (
-                  <TextField {...params} label={textField.label} placeholder={textField.placeholder} />
+                  <TextField
+                    {...params}
+                    label={textField.label}
+                    placeholder={textField.placeholder}
+                  />
                 )}
               />
             ) : (
@@ -461,7 +513,9 @@ export function EntryPage(props: EntryPageProps) {
               <TextField
                 label="Comment"
                 value={draft.comment}
-                onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+                onChange={(e) =>
+                  setDraft({ ...draft, comment: e.target.value })
+                }
                 placeholder="Anything you want to remember about this one"
                 size="small"
                 multiline
@@ -501,7 +555,8 @@ const ENTRY_PAGE_PROPS: Record<TransactionKind, EntryPageProps> = {
     },
     addLabel: 'Add expense',
     emptyTitle: 'Nothing logged yet',
-    emptyHint: 'Add your first expense to see it here, with the account it came out of.',
+    emptyHint:
+      'Add your first expense to see it here, with the account it came out of.',
   },
   income: {
     kind: 'income',
@@ -511,7 +566,8 @@ const ENTRY_PAGE_PROPS: Record<TransactionKind, EntryPageProps> = {
     textField: { name: 'from', label: 'From', placeholder: 'Who paid you' },
     addLabel: 'Add income',
     emptyTitle: 'No income logged yet',
-    emptyHint: 'Add a salary, a refund or anything else that landed in an account.',
+    emptyHint:
+      'Add a salary, a refund or anything else that landed in an account.',
   },
 };
 
@@ -524,11 +580,23 @@ export function Transactions() {
     <>
       <Tabs
         value={active}
-        onChange={(_, value: TransactionKind) => navigate(`/transactions/${value}`)}
+        onChange={(_, value: TransactionKind) =>
+          navigate(`/transactions/${value}`)
+        }
         sx={{ mb: 3, minHeight: 0, '& .MuiTabs-indicator': { height: 2 } }}
       >
-        <Tab disableRipple label="Expenses" value="expenses" sx={{ minHeight: 0, py: 1.25 }} />
-        <Tab disableRipple label="Income" value="income" sx={{ minHeight: 0, py: 1.25 }} />
+        <Tab
+          disableRipple
+          label="Expenses"
+          value="expenses"
+          sx={{ minHeight: 0, py: 1.25 }}
+        />
+        <Tab
+          disableRipple
+          label="Income"
+          value="income"
+          sx={{ minHeight: 0, py: 1.25 }}
+        />
       </Tabs>
       <EntryPage key={active} {...ENTRY_PAGE_PROPS[active]} />
     </>

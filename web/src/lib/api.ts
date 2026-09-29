@@ -9,7 +9,7 @@ export const tokenStore = {
 export class ApiError extends Error {
   constructor(
     message: string,
-    readonly status: number,
+    readonly status: number
   ) {
     super(message);
   }
@@ -20,7 +20,7 @@ export const sessionExpired = new EventTarget();
 
 export async function api<T>(
   path: string,
-  options: { method?: string; body?: unknown } = {},
+  options: { method?: string; body?: unknown } = {}
 ): Promise<T> {
   const token = tokenStore.get();
 
@@ -45,7 +45,7 @@ export async function api<T>(
   if (!response.ok) {
     throw new ApiError(
       payload?.error ?? 'Could not reach the server. Is the API running?',
-      response.status,
+      response.status
     );
   }
 
@@ -53,7 +53,9 @@ export async function api<T>(
 }
 
 /** Builds `?a=1&b=2`, dropping empty values. */
-export function queryString(params: Record<string, string | number | undefined>): string {
+export function queryString(
+  params: Record<string, string | number | undefined>
+): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== '') search.set(key, String(value));

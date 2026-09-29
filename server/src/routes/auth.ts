@@ -17,7 +17,13 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   'Health',
 ];
 
-const DEFAULT_INCOME_CATEGORIES = ['Salary', 'Freelance', 'Gift', 'Refund', 'Interest'];
+const DEFAULT_INCOME_CATEGORIES = [
+  'Salary',
+  'Freelance',
+  'Gift',
+  'Refund',
+  'Interest',
+];
 
 const registerSchema = z.object({
   fullName: z.string().trim().min(1, 'Enter your name.').max(120),
@@ -26,7 +32,10 @@ const registerSchema = z.object({
     .trim()
     .min(3, 'Username needs at least 3 characters.')
     .max(40)
-    .regex(/^[a-zA-Z0-9_.-]+$/, 'Use letters, numbers, dots, dashes or underscores.'),
+    .regex(
+      /^[a-zA-Z0-9_.-]+$/,
+      'Use letters, numbers, dots, dashes or underscores.'
+    ),
   password: z.string().min(6, 'Password needs at least 6 characters.').max(200),
 });
 
@@ -38,11 +47,14 @@ authRouter.post('/register', async (req, res, next) => {
     }
     const { fullName, username, password } = parsed.data;
 
-    const existing = await one('SELECT id FROM users WHERE lower(username) = lower($1)', [
-      username,
-    ]);
+    const existing = await one(
+      'SELECT id FROM users WHERE lower(username) = lower($1)',
+      [username]
+    );
     if (existing) {
-      return res.status(409).json({ error: 'That username is taken. Pick another.' });
+      return res
+        .status(409)
+        .json({ error: 'That username is taken. Pick another.' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -56,7 +68,7 @@ authRouter.post('/register', async (req, res, next) => {
         `INSERT INTO users (full_name, username, password_hash)
          VALUES ($1, $2, $3)
          RETURNING id, username, full_name`,
-        [fullName, username, passwordHash],
+        [fullName, username, passwordHash]
       );
       const created = inserted.rows[0];
 
@@ -65,26 +77,30 @@ authRouter.post('/register', async (req, res, next) => {
       await client.query(
         `INSERT INTO accounts (user_id, name, kind, currency, opening_balance)
          VALUES ($1, 'Cash', 'cash', 'EUR', 0)`,
-        [created.id],
+        [created.id]
       );
 
       for (const name of DEFAULT_EXPENSE_CATEGORIES) {
         await client.query(
           `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, 'expense')`,
-          [created.id, name],
+          [created.id, name]
         );
       }
       for (const name of DEFAULT_INCOME_CATEGORIES) {
         await client.query(
           `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, 'income')`,
-          [created.id, name],
+          [created.id, name]
         );
       }
 
       return created;
     });
 
-    const authUser = { id: user.id, username: user.username, fullName: user.full_name };
+    const authUser = {
+      id: user.id,
+      username: user.username,
+      fullName: user.full_name,
+    };
     res.status(201).json({ token: signToken(authUser), user: authUser });
   } catch (err) {
     next(err);
@@ -99,7 +115,9 @@ authRouter.post('/login', async (req, res, next) => {
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: 'Enter your username and password.' });
+      return res
+        .status(400)
+        .json({ error: 'Enter your username and password.' });
     }
 
     const user = await one<{
@@ -109,15 +127,23 @@ authRouter.post('/login', async (req, res, next) => {
       password_hash: string;
     }>(
       'SELECT id, username, full_name, password_hash FROM users WHERE lower(username) = lower($1)',
-      [parsed.data.username],
+      [parsed.data.username]
     );
 
-    const ok = user ? await bcrypt.compare(parsed.data.password, user.password_hash) : false;
+    const ok = user
+      ? await bcrypt.compare(parsed.data.password, user.password_hash)
+      : false;
     if (!user || !ok) {
-      return res.status(401).json({ error: 'That username and password do not match.' });
+      return res
+        .status(401)
+        .json({ error: 'That username and password do not match.' });
     }
 
-    const authUser = { id: user.id, username: user.username, fullName: user.full_name };
+    const authUser = {
+      id: user.id,
+      username: user.username,
+      fullName: user.full_name,
+    };
     res.json({ token: signToken(authUser), user: authUser });
   } catch (err) {
     next(err);

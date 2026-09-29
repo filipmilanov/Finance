@@ -5,7 +5,14 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
-import { AlertSlot, DialogBody, DialogHead, EmptyAction, EmptyRoot, EmptyTitle } from './ui.styles';
+import {
+  AlertSlot,
+  DialogBody,
+  DialogHead,
+  EmptyAction,
+  EmptyRoot,
+  EmptyTitle,
+} from './ui.styles';
 
 export { AlertSlot };
 
