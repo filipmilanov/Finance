@@ -31,8 +31,8 @@ npm run dev
 
 Open http://localhost:5173 and create an account, or sign in to the seeded one:
 
-| Username | Password    |
-| -------- | ----------- |
+| Username | Password     |
+| -------- | ------------ |
 | `filip`  | `verdant123` |
 
 ### pgAdmin
@@ -47,7 +47,7 @@ Every setting has a working default that matches `docker-compose.yml`, so no
 `.env` is required. To override, create `server/.env`:
 
 ```
-DATABASE_URL=postgres://verdant:verdant@localhost:5432/verdant
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 JWT_SECRET=a-long-random-string
 PORT=4000
 CLIENT_ORIGIN=http://localhost:5173
@@ -81,17 +81,17 @@ categories can be added from the entry form itself.
 
 ### API
 
-| Method                 | Path                        | Notes                          |
-| ---------------------- | --------------------------- | ------------------------------ |
-| `POST`                 | `/api/auth/register`        | Returns a JWT                  |
-| `POST`                 | `/api/auth/login`           | Returns a JWT                  |
-| `GET`                  | `/api/auth/me`              |                                |
-| `GET/POST/PUT/DELETE`  | `/api/accounts`             | Balances included on `GET`     |
-| `GET/POST/DELETE`      | `/api/categories`           | `?kind=expense\|income`        |
-| `GET/POST/PUT/DELETE`  | `/api/expenses`             | Filters: account, category, from, to |
-| `GET/POST/PUT/DELETE`  | `/api/incomes`              | Same filters                   |
-| `GET`                  | `/api/dashboard`            | Totals, 6-month series, recent |
-| `GET`                  | `/api/health`               | Checks the DB connection       |
+| Method                | Path                 | Notes                                |
+| --------------------- | -------------------- | ------------------------------------ |
+| `POST`                | `/api/auth/register` | Returns a JWT                        |
+| `POST`                | `/api/auth/login`    | Returns a JWT                        |
+| `GET`                 | `/api/auth/me`       |                                      |
+| `GET/POST/PUT/DELETE` | `/api/accounts`      | Balances included on `GET`           |
+| `GET/POST/DELETE`     | `/api/categories`    | `?kind=expense\|income`              |
+| `GET/POST/PUT/DELETE` | `/api/expenses`      | Filters: account, category, from, to |
+| `GET/POST/PUT/DELETE` | `/api/incomes`       | Same filters                         |
+| `GET`                 | `/api/dashboard`     | Totals, 6-month series, recent       |
+| `GET`                 | `/api/health`        | Checks the DB connection             |
 
 Passwords are hashed with bcrypt. The token is kept in `localStorage` and sent
 as a `Bearer` header; a `401` drops the app back to the sign-in screen.
@@ -116,19 +116,6 @@ bright green fill that would overpower the page.
 Type is Fraunces (figures and headings) over Instrument Sans (interface), with
 tabular numerals everywhere money appears so columns line up. The logo is three
 ledger bars whose tallest stroke grows a leaf.
-
-## Screenshots
-
-Puppeteer lives in the repo root (`npm install` there first).
-
-```bash
-node screenshot.mjs http://localhost:5173/ dashboard
-node screenshot.mjs http://localhost:5173/expenses expenses --theme=dark --full
-node screenshot.mjs http://localhost:5173/ login --logged-out
-```
-
-Output lands in `temporary screenshots/`. The script signs in as the seeded user
-first, so authenticated pages render.
 
 ## Not built
 

@@ -1,5 +1,11 @@
 import { createTheme, type Theme } from '@mui/material/styles';
-import { darkTokens, FONT_DISPLAY, FONT_UI, lightTokens, type AppTokens } from './tokens';
+import {
+  darkTokens,
+  FONT_DISPLAY,
+  FONT_UI,
+  lightTokens,
+  type AppTokens,
+} from './tokens';
 
 declare module '@mui/material/styles' {
   interface Theme {
@@ -24,9 +30,10 @@ function buildShadows(tokens: AppTokens): Theme['shadows'] {
 export function createAppTheme(mode: ThemeMode): Theme {
   const app = mode === 'dark' ? darkTokens : lightTokens;
 
-  const text = mode === 'dark'
-    ? { primary: '#e6f1e9', secondary: '#93aa9d', disabled: app.textFaint }
-    : { primary: '#11201a', secondary: '#56685f', disabled: app.textFaint };
+  const text =
+    mode === 'dark'
+      ? { primary: '#e6f1e9', secondary: '#93aa9d', disabled: app.textFaint }
+      : { primary: '#11201a', secondary: '#56685f', disabled: app.textFaint };
 
   const divider = mode === 'dark' ? '#1d3327' : '#d8e4d6';
   const paper = mode === 'dark' ? '#0d1a14' : '#ffffff';
@@ -58,12 +65,41 @@ export function createAppTheme(mode: ThemeMode): Theme {
       fontFamily: FONT_UI,
       fontSize: 15,
       // Fraunces carries headings and figures; Instrument Sans does the rest.
-      h1: { fontFamily: FONT_DISPLAY, fontWeight: 500, letterSpacing: '-0.028em', lineHeight: 1.1 },
-      h2: { fontFamily: FONT_DISPLAY, fontWeight: 500, letterSpacing: '-0.026em', lineHeight: 1.12 },
-      h3: { fontFamily: FONT_DISPLAY, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.2 },
-      h4: { fontFamily: FONT_DISPLAY, fontWeight: 500, letterSpacing: '-0.018em', lineHeight: 1.25 },
-      h5: { fontFamily: FONT_DISPLAY, fontWeight: 500, letterSpacing: '-0.018em' },
-      h6: { fontFamily: FONT_DISPLAY, fontWeight: 500, fontSize: '1.06rem', letterSpacing: '-0.018em' },
+      h1: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        letterSpacing: '-0.028em',
+        lineHeight: 1.1,
+      },
+      h2: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        letterSpacing: '-0.026em',
+        lineHeight: 1.12,
+      },
+      h3: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        letterSpacing: '-0.02em',
+        lineHeight: 1.2,
+      },
+      h4: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        letterSpacing: '-0.018em',
+        lineHeight: 1.25,
+      },
+      h5: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        letterSpacing: '-0.018em',
+      },
+      h6: {
+        fontFamily: FONT_DISPLAY,
+        fontWeight: 500,
+        fontSize: '1.06rem',
+        letterSpacing: '-0.018em',
+      },
       body1: { lineHeight: 1.55 },
       body2: { lineHeight: 1.55 },
       button: { textTransform: 'none', fontWeight: 500 },
@@ -135,7 +171,8 @@ export function createAppTheme(mode: ThemeMode): Theme {
         styleOverrides: {
           root: {
             borderRadius: app.radius.field,
-            transition: 'transform 0.18s cubic-bezier(0.22,1,0.36,1), color 0.18s ease, border-color 0.18s ease',
+            transition:
+              'transform 0.18s cubic-bezier(0.22,1,0.36,1), color 0.18s ease, border-color 0.18s ease',
             '&:active': { transform: 'scale(0.94)' },
             '&:focus-visible': { boxShadow: app.ring },
           },
@@ -147,8 +184,12 @@ export function createAppTheme(mode: ThemeMode): Theme {
           root: {
             borderRadius: app.radius.field,
             backgroundColor: app.canvas,
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: app.lineStrong },
-            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: app.brand.main },
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: app.lineStrong,
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: app.brand.main,
+            },
             '&.Mui-focused': { backgroundColor: paper },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
               borderWidth: 1,

@@ -9,7 +9,10 @@ export function money(value: number, currency = 'EUR'): string {
 
 /** The symbol for a currency code — "€" for EUR — for use as a field prefix. */
 export function currencySymbol(currency = 'EUR'): string {
-  const parts = new Intl.NumberFormat(undefined, { style: 'currency', currency }).formatToParts(0);
+  const parts = new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+  }).formatToParts(0);
   return parts.find((part) => part.type === 'currency')?.value ?? currency;
 }
 

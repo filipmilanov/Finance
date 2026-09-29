@@ -14,7 +14,11 @@ type AuthValue = {
   user: User | null;
   ready: boolean;
   signIn: (username: string, password: string) => Promise<void>;
-  register: (fullName: string, username: string, password: string) => Promise<void>;
+  register: (
+    fullName: string,
+    username: string,
+    password: string
+  ) => Promise<void>;
   signOut: () => void;
 };
 
@@ -53,14 +57,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (fullName: string, username: string, password: string) => {
-      const result = await api<{ token: string; user: User }>('/auth/register', {
-        method: 'POST',
-        body: { fullName, username, password },
-      });
+      const result = await api<{ token: string; user: User }>(
+        '/auth/register',
+        {
+          method: 'POST',
+          body: { fullName, username, password },
+        }
+      );
       tokenStore.set(result.token);
       setUser(result.user);
     },
-    [],
+    []
   );
 
   const signOut = useCallback(() => {
@@ -70,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ user, ready, signIn, register, signOut }),
-    [user, ready, signIn, register, signOut],
+    [user, ready, signIn, register, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

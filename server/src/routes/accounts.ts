@@ -32,7 +32,11 @@ const BALANCE_SQL = `
 const accountSchema = z.object({
   name: z.string().trim().min(1, 'Give the account a name.').max(80),
   kind: z.enum(['cash', 'bank', 'card', 'savings']),
-  currency: z.string().trim().length(3, 'Use a 3-letter currency code.').toUpperCase(),
+  currency: z
+    .string()
+    .trim()
+    .length(3, 'Use a 3-letter currency code.')
+    .toUpperCase(),
   openingBalance: z.coerce.number().finite(),
 });
 
@@ -54,16 +58,18 @@ accountsRouter.post('/', async (req, res, next) => {
 
     const duplicate = await one(
       'SELECT id FROM accounts WHERE user_id = $1 AND lower(name) = lower($2)',
-      [req.user!.id, name],
+      [req.user!.id, name]
     );
     if (duplicate) {
-      return res.status(409).json({ error: `You already have an account called ${name}.` });
+      return res
+        .status(409)
+        .json({ error: `You already have an account called ${name}.` });
     }
 
     const created = await one(
       `INSERT INTO accounts (user_id, name, kind, currency, opening_balance)
        VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [req.user!.id, name, kind, currency, openingBalance],
+      [req.user!.id, name, kind, currency, openingBalance]
     );
     res.status(201).json(created);
   } catch (err) {
@@ -82,7 +88,7 @@ accountsRouter.put('/:id', async (req, res, next) => {
     const updated = await one(
       `UPDATE accounts SET name = $1, kind = $2, currency = $3, opening_balance = $4
        WHERE id = $5 AND user_id = $6 RETURNING id`,
-      [name, kind, currency, openingBalance, req.params.id, req.user!.id],
+      [name, kind, currency, openingBalance, req.params.id, req.user!.id]
     );
     if (!updated) return res.status(404).json({ error: 'Account not found.' });
     res.json(updated);
@@ -99,7 +105,7 @@ accountsRouter.delete('/:id', async (req, res, next) => {
          UNION ALL
          SELECT account_id FROM incomes  WHERE account_id = $1
        ) t LIMIT 1`,
-      [req.params.id],
+      [req.params.id]
     );
     if (inUse) {
       return res.status(409).json({
@@ -107,10 +113,10 @@ accountsRouter.delete('/:id', async (req, res, next) => {
       });
     }
 
-    const deleted = await one('DELETE FROM accounts WHERE id = $1 AND user_id = $2 RETURNING id', [
-      req.params.id,
-      req.user!.id,
-    ]);
+    const deleted = await one(
+      'DELETE FROM accounts WHERE id = $1 AND user_id = $2 RETURNING id',
+      [req.params.id, req.user!.id]
+    );
     if (!deleted) return res.status(404).json({ error: 'Account not found.' });
     res.status(204).end();
   } catch (err) {

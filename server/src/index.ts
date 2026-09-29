@@ -1,4 +1,8 @@
-import express, { type NextFunction, type Request, type Response } from 'express';
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from 'express';
 import cors from 'cors';
 import { config } from './config.js';
 import { pool } from './db.js';
@@ -30,13 +34,20 @@ app.use('/api/incomes', requireAuth, incomesRouter);
 
 app.use((_req, res) => res.status(404).json({ error: 'No such endpoint.' }));
 
-app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status ?? 500;
-  if (status >= 500) console.error(err);
-  res.status(status).json({
-    error: status >= 500 ? 'Something went wrong on our end.' : err.message,
-  });
-});
+app.use(
+  (
+    err: Error & { status?: number },
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    const status = err.status ?? 500;
+    if (status >= 500) console.error(err);
+    res.status(status).json({
+      error: status >= 500 ? 'Something went wrong on our end.' : err.message,
+    });
+  }
+);
 
 app.listen(config.port, () => {
   console.log(`Verdant API listening on http://localhost:${config.port}`);

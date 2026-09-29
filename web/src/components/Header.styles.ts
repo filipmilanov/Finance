@@ -41,7 +41,10 @@ export const LogoLink = styled(Link)(({ theme }) => ({
   transition: 'transform 0.25s cubic-bezier(0.22,1,0.36,1)',
   '&:hover': { transform: 'translateY(-1px)' },
   '&:active': { transform: 'translateY(0) scale(0.985)' },
-  '&:focus-visible': { outline: `2px solid ${theme.app.brand.main}`, outlineOffset: 2 },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.app.brand.main}`,
+    outlineOffset: 2,
+  },
 }));
 
 export const MainNav = styled('nav')(({ theme }) => ({
@@ -65,9 +68,18 @@ export const NavItem = styled(NavLink)(({ theme }) => ({
   fontWeight: 500,
   whiteSpace: 'nowrap',
   transition: 'color 0.18s ease, background-color 0.18s ease',
-  '&:hover': { color: theme.palette.text.primary, backgroundColor: theme.app.sunken },
-  '&.active': { color: theme.app.brand.main, backgroundColor: theme.app.brand.wash },
-  '&:focus-visible': { outline: `2px solid ${theme.app.brand.main}`, outlineOffset: 2 },
+  '&:hover': {
+    color: theme.palette.text.primary,
+    backgroundColor: theme.app.sunken,
+  },
+  '&.active': {
+    color: theme.app.brand.main,
+    backgroundColor: theme.app.brand.wash,
+  },
+  '&:focus-visible': {
+    outline: `2px solid ${theme.app.brand.main}`,
+    outlineOffset: 2,
+  },
 }));
 
 export const HeaderEnd = styled(Box)(({ theme }) => ({
@@ -107,6 +119,9 @@ export const ThemeToggle = styled('div')(({ theme }) => ({
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.paper,
     color: theme.palette.text.secondary,
-    '&:hover': { color: theme.app.brand.main, borderColor: theme.app.brand.main },
+    '&:hover': {
+      color: theme.app.brand.main,
+      borderColor: theme.app.brand.main,
+    },
   },
 }));

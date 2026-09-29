@@ -13,8 +13,12 @@ export const PaddedCard = styled(Card)(({ theme }) => ({
 
 /** First and last cells get extra inset so content clears the card's radius. */
 export const LedgerRow = styled(TableRow)(({ theme }) => ({
-  '& > td:first-of-type, & > th:first-of-type': { paddingLeft: theme.spacing(3) },
-  '& > td:last-of-type, & > th:last-of-type': { paddingRight: theme.spacing(3) },
+  '& > td:first-of-type, & > th:first-of-type': {
+    paddingLeft: theme.spacing(3),
+  },
+  '& > td:last-of-type, & > th:last-of-type': {
+    paddingRight: theme.spacing(3),
+  },
 }));
 
 /** The totals row is set off by a heavier rule so it does not read as data. */

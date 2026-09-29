@@ -47,7 +47,8 @@ export type AppTokens = {
 };
 
 export const FONT_DISPLAY = "'Fraunces', 'Iowan Old Style', Georgia, serif";
-export const FONT_UI = "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+export const FONT_UI =
+  "'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const RADIUS = { field: 9, raised: 14, floating: 20 };
 
@@ -77,8 +78,10 @@ export const lightTokens: AppTokens = {
   radius: RADIUS,
 
   shadow: {
-    raised: '0 1px 2px rgba(12, 58, 38, 0.05), 0 3px 10px -3px rgba(12, 58, 38, 0.07)',
-    floating: '0 2px 6px rgba(12, 58, 38, 0.06), 0 18px 40px -12px rgba(12, 58, 38, 0.22)',
+    raised:
+      '0 1px 2px rgba(12, 58, 38, 0.05), 0 3px 10px -3px rgba(12, 58, 38, 0.07)',
+    floating:
+      '0 2px 6px rgba(12, 58, 38, 0.06), 0 18px 40px -12px rgba(12, 58, 38, 0.22)',
   },
 
   ring: '0 0 0 3px rgba(14, 107, 69, 0.28)',
@@ -111,7 +114,8 @@ export const darkTokens: AppTokens = {
 
   shadow: {
     raised: '0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 12px -4px rgba(0, 0, 0, 0.5)',
-    floating: '0 2px 8px rgba(0, 0, 0, 0.5), 0 20px 44px -14px rgba(0, 0, 0, 0.7)',
+    floating:
+      '0 2px 8px rgba(0, 0, 0, 0.5), 0 20px 44px -14px rgba(0, 0, 0, 0.7)',
   },
 
   ring: '0 0 0 3px rgba(53, 201, 138, 0.32)',

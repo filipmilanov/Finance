@@ -53,18 +53,28 @@ function buildEntryRouter(cfg: EntryConfig): Router {
   const textValue = (body: EntryBody) => body[cfg.textField] ?? '';
 
   /** Confirms the account and category belong to this user before writing. */
-  async function assertOwnership(userId: number, accountId: number, categoryId: number) {
-    const account = await one('SELECT id FROM accounts WHERE id = $1 AND user_id = $2', [
-      accountId,
-      userId,
-    ]);
-    if (!account) throw Object.assign(new Error('That account does not exist.'), { status: 400 });
+  async function assertOwnership(
+    userId: number,
+    accountId: number,
+    categoryId: number
+  ) {
+    const account = await one(
+      'SELECT id FROM accounts WHERE id = $1 AND user_id = $2',
+      [accountId, userId]
+    );
+    if (!account)
+      throw Object.assign(new Error('That account does not exist.'), {
+        status: 400,
+      });
 
     const category = await one(
       'SELECT id FROM categories WHERE id = $1 AND user_id = $2 AND kind = $3',
-      [categoryId, userId, cfg.categoryKind],
+      [categoryId, userId, cfg.categoryKind]
     );
-    if (!category) throw Object.assign(new Error('That category does not exist.'), { status: 400 });
+    if (!category)
+      throw Object.assign(new Error('That category does not exist.'), {
+        status: 400,
+      });
   }
 
   router.get('/', async (req, res, next) => {
@@ -92,7 +102,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
       const where = filters.length ? ` AND ${filters.join(' AND ')}` : '';
       const rows = await query(
         `${selectSql}${where} ORDER BY t.${cfg.dateColumn} DESC, t.id DESC LIMIT 500`,
-        params,
+        params
       );
       res.json(rows);
     } catch (err) {
@@ -122,7 +132,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
           body.date,
           body.amount,
           body.comment ?? '',
-        ],
+        ]
       );
       res.status(201).json(created);
     } catch (err) {
@@ -153,7 +163,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
           body.comment ?? '',
           req.params.id,
           req.user!.id,
-        ],
+        ]
       );
       if (!updated) return res.status(404).json({ error: 'Entry not found.' });
       res.json(updated);
@@ -166,7 +176,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
     try {
       const deleted = await one(
         `DELETE FROM ${cfg.table} WHERE id = $1 AND user_id = $2 RETURNING id`,
-        [req.params.id, req.user!.id],
+        [req.params.id, req.user!.id]
       );
       if (!deleted) return res.status(404).json({ error: 'Entry not found.' });
       res.status(204).end();

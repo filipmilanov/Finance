@@ -20,9 +20,16 @@ export const AuthAside = styled(Box)<Poly>(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  backgroundColor: theme.palette.mode === 'dark' ? theme.app.floating : theme.app.brand.main,
-  color: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.app.brand.contrast,
-  borderRight: theme.palette.mode === 'dark' ? `1px solid ${theme.palette.divider}` : 'none',
+  backgroundColor:
+    theme.palette.mode === 'dark' ? theme.app.floating : theme.app.brand.main,
+  color:
+    theme.palette.mode === 'dark'
+      ? theme.palette.text.primary
+      : theme.app.brand.contrast,
+  borderRight:
+    theme.palette.mode === 'dark'
+      ? `1px solid ${theme.palette.divider}`
+      : 'none',
 
   '&::before': {
     content: '""',
