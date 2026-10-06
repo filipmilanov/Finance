@@ -1,4 +1,35 @@
 services:
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: development
+    container_name: frontend-dev
+    restart: unless-stopped
+    ports:
+      - '5173:5173'
+    env_file:
+      - ./.env
+    environment:
+      API_PROXY_TARGET: ${API_PROXY_TARGET}
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: development
+    container_name: backend-dev
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    env_file:
+      - ./.env
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:16-alpine
     container_name: ${CONTAINER_NAME}
