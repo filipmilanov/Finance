@@ -36,10 +36,9 @@ jobs:
           [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing+=("VERCEL_TOKEN")
           [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing+=("VERCEL_ORG_ID")
           [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing+=("VERCEL_PROJECT_ID")
-          [ -z "${{ secrets.VITE_API_URL }}" ] && missing+=("VITE_API_URL")
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "::error::Missing required secrets: ${missing[*]}"
-            echo "Add them under Settings → Secrets and variables → Actions."
+            echo "Add them under Settings → Secrets and variables → Actions → production."
             exit 1
           fi
           echo "Required secrets are present."
@@ -52,27 +51,29 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
+      - name: Remove stale Vercel link
+        run: rm -rf .vercel
+
       - name: Deploy to Vercel
         id: vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: web
-          vercel-args: '--prod'
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          url=$(npx vercel@latest deploy --prod --token "$VERCEL_TOKEN" --yes)
+          echo "deploy_url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $url"
 
       - name: Verify deployment URL
         run: |
           set -euo pipefail
-          DEPLOY_URL="${{ steps.vercel.outputs.preview-url }}"
+          DEPLOY_URL="${{ steps.vercel.outputs.deploy_url }}"
           if [ -z "$DEPLOY_URL" ]; then
-            echo "::error::Vercel action did not return a deployment URL."
+            echo "::error::Deploy did not return a URL."
             exit 1
           fi
-          echo "Deployed to: $DEPLOY_URL"
           echo "Checking that the app responds..."
           code=$(curl -sS -o /tmp/vercel-body.html -w "%{http_code}" --max-time 30 "$DEPLOY_URL")
           echo "HTTP $code"
@@ -89,8 +90,7 @@ jobs:
           {
             echo "## Frontend deployment succeeded"
             echo ""
-            echo "- **URL:** ${{ steps.vercel.outputs.preview-url }}"
-            echo "- **API:** ${{ secrets.VITE_API_URL }}"
+            echo "- **URL:** ${{ steps.vercel.outputs.deploy_url }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Failure diagnostics
@@ -99,10 +99,10 @@ jobs:
           {
             echo "## Frontend deployment failed"
             echo ""
-            echo "1. Open [Vercel dashboard](https://vercel.com/dashboard) → project → **Deployments** → failed build logs"
-            echo "2. Confirm \`VITE_API_URL\` secret matches your Render API URL (no trailing slash)"
-            echo "3. Confirm \`VERCEL_ORG_ID\` and \`VERCEL_PROJECT_ID\` match the Vercel project"
-            echo "4. Run locally: \`cd web && VITE_API_URL=... npm run build\`"
+            echo "1. **IDs** — Vercel → Project → Settings → General → copy **Project ID**"
+            echo "2. **Org ID** — Vercel → Account or Team → Settings → copy **ID** (team if project is under a team)"
+            echo "3. **Token** — [vercel.com/account/tokens](https://vercel.com/account/tokens) with access to this project"
+            echo "4. Set \`VITE_API_URL\` on Vercel (and optionally GitHub secret for pre-flight build)"
             echo ""
-            echo "Build output and Vercel CLI logs are in the job log above."
+            echo "**Skip this workflow** if Vercel already auto-deploys on git push — you only need one deploy path."
           } >> "$GITHUB_STEP_SUMMARY"
