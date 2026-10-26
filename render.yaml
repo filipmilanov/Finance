@@ -1,0 +1,23 @@
+# Render Blueprint — backend API (https://render.com/docs/blueprint-spec)
+# Connect this repo in Render and apply the blueprint, or create the service manually
+# with the same settings. Frontend deploys separately on Vercel.
+services:
+  - type: web
+    name: verdant-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install && npm run build && npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '20'
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: PORT
+        value: '10000'

@@ -1,5 +1,8 @@
 const TOKEN_KEY = 'verdant-token';
 
+/** Empty in dev (Vite proxies /api); set to your Render URL in production. */
+const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
   set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
@@ -24,7 +27,7 @@ export async function api<T>(
 ): Promise<T> {
   const token = tokenStore.get();
 
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE}/api${path}`, {
     method: options.method ?? 'GET',
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),

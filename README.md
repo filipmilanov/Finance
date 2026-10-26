@@ -4,9 +4,10 @@ A personal finance tracker: accounts, expenses and income, with balances derived
 from the ledger rather than stored.
 
 - **Frontend** — Vite + React + TypeScript (`web/`)
-- **Backend** — Node.js + Express + TypeScript (`server/`)
-- **Database** — PostgreSQL 16, browsable in pgAdmin (`docker-compose.yml`)
-- **Migrations** — node-pg-migrate
+- **Backend** — Node.js + Express + Drizzle ORM + TypeScript (`server/`)
+- **Database** — PostgreSQL (local Docker or Supabase)
+- **Migrations** — Drizzle Kit (`server/drizzle/`)
+- **Deploy** — Vercel (frontend) + Render (backend) — see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## Running it
 
@@ -19,7 +20,7 @@ docker compose up -d
 # 2. API on :4000
 cd server
 npm install
-npm run migrate      # creates the tables
+npm run db:migrate   # creates the tables (Drizzle)
 npm run seed         # optional: a demo user with a few months of data
 npm run dev
 
@@ -99,12 +100,14 @@ as a `Bearer` header; a `401` drops the app back to the sign-in screen.
 ### Migrations
 
 ```bash
-npm run migrate        # apply everything pending
-npm run migrate:down   # roll back one
+npm run db:migrate     # apply everything pending
+npm run db:generate    # generate SQL after editing src/db/schema.ts
 ```
 
-New migrations go in `server/migrations/` as `<timestamp>_<name>.js`, exporting
-`up` and `down`.
+Schema lives in `server/src/db/schema.ts`. SQL migrations are in `server/drizzle/`.
+
+Upgrading from the old node-pg-migrate setup? Run `db:migrate` once — it detects
+existing tables and baselines Drizzle without touching your data.
 
 ## Design
 

@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { one, transaction } from '../db.js';
+import { db } from '../db.js';
+import { accounts, categories, users } from '../db/schema.js';
 import { requireAuth, signToken } from '../auth.js';
 
 export const authRouter = Router();
@@ -47,10 +49,12 @@ authRouter.post('/register', async (req, res, next) => {
     }
     const { fullName, username, password } = parsed.data;
 
-    const existing = await one(
-      'SELECT id FROM users WHERE lower(username) = lower($1)',
-      [username]
-    );
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`lower(${users.username}) = lower(${username})`)
+      .limit(1);
+
     if (existing) {
       return res
         .status(409)
@@ -59,38 +63,39 @@ authRouter.post('/register', async (req, res, next) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await transaction(async (client) => {
-      const inserted = await client.query<{
-        id: number;
-        username: string;
-        full_name: string;
-      }>(
-        `INSERT INTO users (full_name, username, password_hash)
-         VALUES ($1, $2, $3)
-         RETURNING id, username, full_name`,
-        [fullName, username, passwordHash]
-      );
-      const created = inserted.rows[0];
+    const user = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(users)
+        .values({ fullName, username, passwordHash })
+        .returning({
+          id: users.id,
+          username: users.username,
+          fullName: users.fullName,
+        });
 
       // Give every new account a starting Cash account and a usable set of
       // categories, so the first expense can be logged without setup.
-      await client.query(
-        `INSERT INTO accounts (user_id, name, kind, currency, opening_balance)
-         VALUES ($1, 'Cash', 'cash', 'EUR', 0)`,
-        [created.id]
-      );
+      await tx.insert(accounts).values({
+        userId: created.id,
+        name: 'Cash',
+        kind: 'cash',
+        currency: 'EUR',
+        openingBalance: 0,
+      });
 
       for (const name of DEFAULT_EXPENSE_CATEGORIES) {
-        await client.query(
-          `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, 'expense')`,
-          [created.id, name]
-        );
+        await tx.insert(categories).values({
+          userId: created.id,
+          name,
+          kind: 'expense',
+        });
       }
       for (const name of DEFAULT_INCOME_CATEGORIES) {
-        await client.query(
-          `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, 'income')`,
-          [created.id, name]
-        );
+        await tx.insert(categories).values({
+          userId: created.id,
+          name,
+          kind: 'income',
+        });
       }
 
       return created;
@@ -99,7 +104,7 @@ authRouter.post('/register', async (req, res, next) => {
     const authUser = {
       id: user.id,
       username: user.username,
-      fullName: user.full_name,
+      fullName: user.fullName,
     };
     res.status(201).json({ token: signToken(authUser), user: authUser });
   } catch (err) {
@@ -120,18 +125,19 @@ authRouter.post('/login', async (req, res, next) => {
         .json({ error: 'Enter your username and password.' });
     }
 
-    const user = await one<{
-      id: number;
-      username: string;
-      full_name: string;
-      password_hash: string;
-    }>(
-      'SELECT id, username, full_name, password_hash FROM users WHERE lower(username) = lower($1)',
-      [parsed.data.username]
-    );
+    const [user] = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        passwordHash: users.passwordHash,
+      })
+      .from(users)
+      .where(sql`lower(${users.username}) = lower(${parsed.data.username})`)
+      .limit(1);
 
     const ok = user
-      ? await bcrypt.compare(parsed.data.password, user.password_hash)
+      ? await bcrypt.compare(parsed.data.password, user.passwordHash)
       : false;
     if (!user || !ok) {
       return res
@@ -142,7 +148,7 @@ authRouter.post('/login', async (req, res, next) => {
     const authUser = {
       id: user.id,
       username: user.username,
-      fullName: user.full_name,
+      fullName: user.fullName,
     };
     res.json({ token: signToken(authUser), user: authUser });
   } catch (err) {

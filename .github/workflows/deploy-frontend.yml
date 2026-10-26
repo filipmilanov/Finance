@@ -1,0 +1,108 @@
+name: Deploy Frontend (Vercel)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy web to Vercel
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Validate secrets
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing+=("VERCEL_TOKEN")
+          [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing+=("VERCEL_ORG_ID")
+          [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing+=("VERCEL_PROJECT_ID")
+          [ -z "${{ secrets.VITE_API_URL }}" ] && missing+=("VITE_API_URL")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            echo "Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Required secrets are present."
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (pre-flight)
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Deploy to Vercel
+        id: vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: web
+          vercel-args: '--prod'
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Verify deployment URL
+        run: |
+          set -euo pipefail
+          DEPLOY_URL="${{ steps.vercel.outputs.preview-url }}"
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::Vercel action did not return a deployment URL."
+            exit 1
+          fi
+          echo "Deployed to: $DEPLOY_URL"
+          echo "Checking that the app responds..."
+          code=$(curl -sS -o /tmp/vercel-body.html -w "%{http_code}" --max-time 30 "$DEPLOY_URL")
+          echo "HTTP $code"
+          head -c 500 /tmp/vercel-body.html || true
+          if [ "$code" -lt 200 ] || [ "$code" -ge 400 ]; then
+            echo "::error::Deployment URL returned HTTP $code"
+            exit 1
+          fi
+          echo "Frontend is reachable."
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          {
+            echo "## Frontend deployment succeeded"
+            echo ""
+            echo "- **URL:** ${{ steps.vercel.outputs.preview-url }}"
+            echo "- **API:** ${{ secrets.VITE_API_URL }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          {
+            echo "## Frontend deployment failed"
+            echo ""
+            echo "1. Open [Vercel dashboard](https://vercel.com/dashboard) → project → **Deployments** → failed build logs"
+            echo "2. Confirm \`VITE_API_URL\` secret matches your Render API URL (no trailing slash)"
+            echo "3. Confirm \`VERCEL_ORG_ID\` and \`VERCEL_PROJECT_ID\` match the Vercel project"
+            echo "4. Run locally: \`cd web && VITE_API_URL=... npm run build\`"
+            echo ""
+            echo "Build output and Vercel CLI logs are in the job log above."
+          } >> "$GITHUB_STEP_SUMMARY"

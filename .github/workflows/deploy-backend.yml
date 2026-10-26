@@ -1,0 +1,104 @@
+name: Deploy Backend (Render)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy API to Render
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate secrets
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ] && missing+=("RENDER_DEPLOY_HOOK_URL")
+          [ -z "${{ secrets.RENDER_API_URL }}" ] && missing+=("RENDER_API_URL")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            echo "Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Required secrets are present."
+
+      - name: Trigger Render deploy
+        id: deploy
+        run: |
+          set -euo pipefail
+          echo "Triggering Render deploy hook..."
+          response=$(curl -sS -w "\n%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          body=$(echo "$response" | head -n -1)
+          code=$(echo "$response" | tail -n 1)
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Render deploy hook returned HTTP $code"
+            echo "Response body: $body"
+            exit 1
+          fi
+          echo "Deploy triggered successfully."
+
+      - name: Wait for Render service
+        run: |
+          set -euo pipefail
+          API_URL="${{ secrets.RENDER_API_URL }}"
+          HEALTH_URL="${API_URL%/}/api/health"
+          echo "Polling $HEALTH_URL (up to 10 minutes)..."
+
+          for attempt in $(seq 1 60); do
+            echo "--- Attempt $attempt/60 ---"
+            if response=$(curl -sS -w "\n%{http_code}" --max-time 15 "$HEALTH_URL" 2>&1); then
+              body=$(echo "$response" | head -n -1)
+              code=$(echo "$response" | tail -n 1)
+              echo "HTTP $code — $body"
+              if [ "$code" = "200" ] && echo "$body" | grep -q '"status":"ok"'; then
+                echo "Backend is healthy."
+                exit 0
+              fi
+            else
+              echo "Request failed: $response"
+            fi
+            sleep 10
+          done
+
+          echo "::error::Backend did not become healthy within 10 minutes."
+          echo "Check Render dashboard → verdant-api → Logs for build/runtime errors."
+          echo "Common causes: DATABASE_URL misconfigured, migration failure, missing JWT_SECRET."
+          exit 1
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          {
+            echo "## Backend deployment succeeded"
+            echo ""
+            echo "- **API URL:** ${{ secrets.RENDER_API_URL }}"
+            echo "- **Health:** ${{ secrets.RENDER_API_URL }}/api/health"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          {
+            echo "## Backend deployment failed"
+            echo ""
+            echo "1. Open [Render dashboard](https://dashboard.render.com) → **verdant-api** → **Logs**"
+            echo "2. Confirm \`DATABASE_URL\` points to your Supabase Postgres (SSL required)"
+            echo "3. Confirm \`CLIENT_ORIGIN\` matches your Vercel URL"
+            echo "4. Re-run migrations locally: \`cd server && npm run db:migrate\`"
+            echo ""
+            echo "Deploy hook response and health-check output are in the job log above."
+          } >> "$GITHUB_STEP_SUMMARY"

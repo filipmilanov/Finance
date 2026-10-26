@@ -5,7 +5,8 @@ import express, {
 } from 'express';
 import cors from 'cors';
 import { config } from './config.js';
-import { pool } from './db.js';
+import { db, pool } from './db.js';
+import { sql } from 'drizzle-orm';
 import { requireAuth } from './auth.js';
 import { authRouter } from './routes/auth.js';
 import { accountsRouter } from './routes/accounts.js';
@@ -19,7 +20,7 @@ app.use(express.json());
 
 app.get('/api/health', async (_req, res) => {
   try {
-    await pool.query('SELECT 1');
+    await db.execute(sql`SELECT 1`);
     res.json({ status: 'ok', database: 'connected' });
   } catch {
     res.status(503).json({ status: 'degraded', database: 'unreachable' });

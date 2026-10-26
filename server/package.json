@@ -3,18 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "migrate": "node scripts/migrate.mjs up",
-    "migrate:down": "node scripts/migrate.mjs down",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:studio": "drizzle-kit studio",
     "seed": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "drizzle-orm": "^0.44.2",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.12.0",
@@ -27,7 +32,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.10",
     "@types/pg": "^8.11.6",
-    "node-pg-migrate": "^7.5.2",
+    "drizzle-kit": "^0.31.1",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   }

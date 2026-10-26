@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { one, query } from '../db.js';
+import { db } from '../db.js';
+import { categories, expenses, incomes } from '../db/schema.js';
 
 export const categoriesRouter = Router();
 
@@ -9,14 +11,27 @@ categoriesRouter.get('/', async (req, res, next) => {
     const kind = req.query.kind;
     const rows =
       kind === 'expense' || kind === 'income'
-        ? await query(
-            'SELECT id, name, kind FROM categories WHERE user_id = $1 AND kind = $2 ORDER BY name',
-            [req.user!.id, kind]
-          )
-        : await query(
-            'SELECT id, name, kind FROM categories WHERE user_id = $1 ORDER BY kind, name',
-            [req.user!.id]
-          );
+        ? await db
+            .select({
+              id: categories.id,
+              name: categories.name,
+              kind: categories.kind,
+            })
+            .from(categories)
+            .where(
+              and(eq(categories.userId, req.user!.id), eq(categories.kind, kind))
+            )
+            .orderBy(asc(categories.name))
+        : await db
+            .select({
+              id: categories.id,
+              name: categories.name,
+              kind: categories.kind,
+            })
+            .from(categories)
+            .where(eq(categories.userId, req.user!.id))
+            .orderBy(asc(categories.kind), asc(categories.name));
+
     res.json(rows);
   } catch (err) {
     next(err);
@@ -35,20 +50,39 @@ categoriesRouter.post('/', async (req, res, next) => {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
-    const existing = await one<{ id: number; name: string; kind: string }>(
-      `SELECT id, name, kind FROM categories
-       WHERE user_id = $1 AND kind = $2 AND lower(name) = lower($3)`,
-      [req.user!.id, parsed.data.kind, parsed.data.name]
-    );
+    const [existing] = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        kind: categories.kind,
+      })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.userId, req.user!.id),
+          eq(categories.kind, parsed.data.kind),
+          sql`lower(${categories.name}) = lower(${parsed.data.name})`
+        )
+      )
+      .limit(1);
+
     // Adding a category you already have is not an error worth blocking a
     // form submit over — hand back the existing one.
     if (existing) return res.status(200).json(existing);
 
-    const created = await one(
-      `INSERT INTO categories (user_id, name, kind) VALUES ($1, $2, $3)
-       RETURNING id, name, kind`,
-      [req.user!.id, parsed.data.name, parsed.data.kind]
-    );
+    const [created] = await db
+      .insert(categories)
+      .values({
+        userId: req.user!.id,
+        name: parsed.data.name,
+        kind: parsed.data.kind,
+      })
+      .returning({
+        id: categories.id,
+        name: categories.name,
+        kind: categories.kind,
+      });
+
     res.status(201).json(created);
   } catch (err) {
     next(err);
@@ -57,24 +91,39 @@ categoriesRouter.post('/', async (req, res, next) => {
 
 categoriesRouter.delete('/:id', async (req, res, next) => {
   try {
-    const inUse = await one(
-      `SELECT 1 FROM (
-         SELECT category_id FROM expenses WHERE category_id = $1
-         UNION ALL
-         SELECT category_id FROM incomes  WHERE category_id = $1
-       ) t LIMIT 1`,
-      [req.params.id]
-    );
-    if (inUse) {
+    const categoryId = Number(req.params.id);
+
+    const expenseUse = await db
+      .select({ id: expenses.id })
+      .from(expenses)
+      .where(eq(expenses.categoryId, categoryId))
+      .limit(1);
+
+    const incomeUse =
+      expenseUse.length === 0
+        ? await db
+            .select({ id: incomes.id })
+            .from(incomes)
+            .where(eq(incomes.categoryId, categoryId))
+            .limit(1)
+        : [];
+
+    if (expenseUse.length > 0 || incomeUse.length > 0) {
       return res
         .status(409)
         .json({ error: 'This category is used by existing entries.' });
     }
 
-    const deleted = await one(
-      'DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.user!.id]
-    );
+    const [deleted] = await db
+      .delete(categories)
+      .where(
+        and(
+          eq(categories.id, categoryId),
+          eq(categories.userId, req.user!.id)
+        )
+      )
+      .returning({ id: categories.id });
+
     if (!deleted) return res.status(404).json({ error: 'Category not found.' });
     res.status(204).end();
   } catch (err) {

@@ -1,13 +1,15 @@
 import { Router } from 'express';
+import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { one, query } from '../db.js';
+import { db } from '../db.js';
+import { accounts, categories, expenses, incomes } from '../db/schema.js';
 
 /**
  * Expenses and incomes are the same shape apart from one text column and the
  * name of the date column, so both routers are built from one definition.
  */
 type EntryConfig = {
-  table: 'expenses' | 'incomes';
+  tableName: 'expenses' | 'incomes';
   dateColumn: 'spent_on' | 'received_on';
   /** The free-text column: `country` for expenses, `source_from` for incomes. */
   textColumn: 'country' | 'source_from';
@@ -18,24 +20,6 @@ type EntryConfig = {
 
 function buildEntryRouter(cfg: EntryConfig): Router {
   const router = Router();
-
-  const selectSql = `
-    SELECT
-      t.id,
-      to_char(t.${cfg.dateColumn}, 'YYYY-MM-DD') AS date,
-      t.${cfg.textColumn}   AS "${cfg.textField}",
-      t.amount,
-      t.comment,
-      t.account_id          AS "accountId",
-      a.name                AS "accountName",
-      a.currency            AS currency,
-      t.category_id         AS "categoryId",
-      c.name                AS "categoryName"
-    FROM ${cfg.table} t
-    JOIN accounts   a ON a.id = t.account_id
-    JOIN categories c ON c.id = t.category_id
-    WHERE t.user_id = $1
-  `;
 
   // `country` and `from` are both accepted; only the one this table owns is
   // read, so the two routers can share a single schema.
@@ -58,53 +42,91 @@ function buildEntryRouter(cfg: EntryConfig): Router {
     accountId: number,
     categoryId: number
   ) {
-    const account = await one(
-      'SELECT id FROM accounts WHERE id = $1 AND user_id = $2',
-      [accountId, userId]
-    );
-    if (!account)
+    const [account] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)))
+      .limit(1);
+
+    if (!account) {
       throw Object.assign(new Error('That account does not exist.'), {
         status: 400,
       });
+    }
 
-    const category = await one(
-      'SELECT id FROM categories WHERE id = $1 AND user_id = $2 AND kind = $3',
-      [categoryId, userId, cfg.categoryKind]
-    );
-    if (!category)
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        and(
+          eq(categories.id, categoryId),
+          eq(categories.userId, userId),
+          eq(categories.kind, cfg.categoryKind)
+        )
+      )
+      .limit(1);
+
+    if (!category) {
       throw Object.assign(new Error('That category does not exist.'), {
         status: 400,
       });
+    }
   }
 
   router.get('/', async (req, res, next) => {
     try {
-      const params: unknown[] = [req.user!.id];
-      const filters: string[] = [];
+      const userId = req.user!.id;
+      const filters: ReturnType<typeof sql>[] = [sql`t.user_id = ${userId}`];
 
       if (req.query.accountId) {
-        params.push(req.query.accountId);
-        filters.push(`t.account_id = $${params.length}`);
+        filters.push(sql`t.account_id = ${Number(req.query.accountId)}`);
       }
       if (req.query.categoryId) {
-        params.push(req.query.categoryId);
-        filters.push(`t.category_id = $${params.length}`);
+        filters.push(sql`t.category_id = ${Number(req.query.categoryId)}`);
       }
       if (req.query.from) {
-        params.push(req.query.from);
-        filters.push(`t.${cfg.dateColumn} >= $${params.length}`);
+        filters.push(sql`t.${sql.raw(cfg.dateColumn)} >= ${String(req.query.from)}`);
       }
       if (req.query.to) {
-        params.push(req.query.to);
-        filters.push(`t.${cfg.dateColumn} <= $${params.length}`);
+        filters.push(sql`t.${sql.raw(cfg.dateColumn)} <= ${String(req.query.to)}`);
       }
 
-      const where = filters.length ? ` AND ${filters.join(' AND ')}` : '';
-      const rows = await query(
-        `${selectSql}${where} ORDER BY t.${cfg.dateColumn} DESC, t.id DESC LIMIT 500`,
-        params
-      );
-      res.json(rows);
+      const whereClause = sql.join(filters, sql` AND `);
+      const textAlias = cfg.textField === 'from' ? 'from' : 'country';
+
+      const result = await db.execute<{
+        id: number;
+        date: string;
+        country?: string;
+        from?: string;
+        amount: number;
+        comment: string;
+        accountId: number;
+        accountName: string;
+        currency: string;
+        categoryId: number;
+        categoryName: string;
+      }>(sql`
+        SELECT
+          t.id,
+          to_char(t.${sql.raw(cfg.dateColumn)}, 'YYYY-MM-DD') AS date,
+          t.${sql.raw(cfg.textColumn)}   AS ${sql.raw(`"${textAlias}"`)},
+          t.amount,
+          t.comment,
+          t.account_id          AS "accountId",
+          a.name                AS "accountName",
+          a.currency            AS currency,
+          t.category_id         AS "categoryId",
+          c.name                AS "categoryName"
+        FROM ${sql.raw(cfg.tableName)} t
+        JOIN accounts   a ON a.id = t.account_id
+        JOIN categories c ON c.id = t.category_id
+        WHERE ${whereClause}
+        ORDER BY t.${sql.raw(cfg.dateColumn)} DESC, t.id DESC
+        LIMIT 500
+      `);
+
+      res.json(result.rows);
     } catch (err) {
       next(err);
     }
@@ -119,21 +141,29 @@ function buildEntryRouter(cfg: EntryConfig): Router {
       const body = parsed.data;
       await assertOwnership(req.user!.id, body.accountId, body.categoryId);
 
-      const created = await one(
-        `INSERT INTO ${cfg.table}
-           (user_id, account_id, category_id, ${cfg.textColumn}, ${cfg.dateColumn}, amount, comment)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id`,
-        [
-          req.user!.id,
-          body.accountId,
-          body.categoryId,
-          textValue(body),
-          body.date,
-          body.amount,
-          body.comment ?? '',
-        ]
-      );
+      const base = {
+        userId: req.user!.id,
+        accountId: body.accountId,
+        categoryId: body.categoryId,
+        amount: body.amount,
+        comment: body.comment ?? '',
+      };
+
+      const [created] =
+        cfg.tableName === 'expenses'
+          ? await db
+              .insert(expenses)
+              .values({ ...base, country: textValue(body), spentOn: body.date })
+              .returning({ id: expenses.id })
+          : await db
+              .insert(incomes)
+              .values({
+                ...base,
+                sourceFrom: textValue(body),
+                receivedOn: body.date,
+              })
+              .returning({ id: incomes.id });
+
       res.status(201).json(created);
     } catch (err) {
       next(err);
@@ -148,23 +178,39 @@ function buildEntryRouter(cfg: EntryConfig): Router {
       }
       const body = parsed.data;
       await assertOwnership(req.user!.id, body.accountId, body.categoryId);
+      const entryId = Number(req.params.id);
 
-      const updated = await one(
-        `UPDATE ${cfg.table} SET
-           account_id = $1, category_id = $2, ${cfg.textColumn} = $3,
-           ${cfg.dateColumn} = $4, amount = $5, comment = $6
-         WHERE id = $7 AND user_id = $8 RETURNING id`,
-        [
-          body.accountId,
-          body.categoryId,
-          textValue(body),
-          body.date,
-          body.amount,
-          body.comment ?? '',
-          req.params.id,
-          req.user!.id,
-        ]
-      );
+      const [updated] =
+        cfg.tableName === 'expenses'
+          ? await db
+              .update(expenses)
+              .set({
+                accountId: body.accountId,
+                categoryId: body.categoryId,
+                country: textValue(body),
+                spentOn: body.date,
+                amount: body.amount,
+                comment: body.comment ?? '',
+              })
+              .where(
+                and(eq(expenses.id, entryId), eq(expenses.userId, req.user!.id))
+              )
+              .returning({ id: expenses.id })
+          : await db
+              .update(incomes)
+              .set({
+                accountId: body.accountId,
+                categoryId: body.categoryId,
+                sourceFrom: textValue(body),
+                receivedOn: body.date,
+                amount: body.amount,
+                comment: body.comment ?? '',
+              })
+              .where(
+                and(eq(incomes.id, entryId), eq(incomes.userId, req.user!.id))
+              )
+              .returning({ id: incomes.id });
+
       if (!updated) return res.status(404).json({ error: 'Entry not found.' });
       res.json(updated);
     } catch (err) {
@@ -174,10 +220,23 @@ function buildEntryRouter(cfg: EntryConfig): Router {
 
   router.delete('/:id', async (req, res, next) => {
     try {
-      const deleted = await one(
-        `DELETE FROM ${cfg.table} WHERE id = $1 AND user_id = $2 RETURNING id`,
-        [req.params.id, req.user!.id]
-      );
+      const entryId = Number(req.params.id);
+
+      const [deleted] =
+        cfg.tableName === 'expenses'
+          ? await db
+              .delete(expenses)
+              .where(
+                and(eq(expenses.id, entryId), eq(expenses.userId, req.user!.id))
+              )
+              .returning({ id: expenses.id })
+          : await db
+              .delete(incomes)
+              .where(
+                and(eq(incomes.id, entryId), eq(incomes.userId, req.user!.id))
+              )
+              .returning({ id: incomes.id });
+
       if (!deleted) return res.status(404).json({ error: 'Entry not found.' });
       res.status(204).end();
     } catch (err) {
@@ -189,7 +248,7 @@ function buildEntryRouter(cfg: EntryConfig): Router {
 }
 
 export const expensesRouter = buildEntryRouter({
-  table: 'expenses',
+  tableName: 'expenses',
   dateColumn: 'spent_on',
   textColumn: 'country',
   textField: 'country',
@@ -197,7 +256,7 @@ export const expensesRouter = buildEntryRouter({
 });
 
 export const incomesRouter = buildEntryRouter({
-  table: 'incomes',
+  tableName: 'incomes',
   dateColumn: 'received_on',
   textColumn: 'source_from',
   textField: 'from',
