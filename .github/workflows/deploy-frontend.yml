@@ -17,9 +17,6 @@ jobs:
     name: Deploy web to Vercel
     runs-on: ubuntu-latest
     environment: production
-    defaults:
-      run:
-        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
@@ -44,15 +41,19 @@ jobs:
           echo "Required secrets are present."
 
       - name: Install dependencies
+        working-directory: web
         run: npm ci
 
       - name: Build (pre-flight)
+        working-directory: web
         run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
+      # Deploy from repo root — Vercel project Root Directory is already "web".
+      # Running vercel CLI inside web/ would resolve to web/web and fail.
       - name: Remove stale Vercel link
-        run: rm -rf .vercel
+        run: rm -rf .vercel web/.vercel
 
       - name: Deploy to Vercel
         id: vercel
@@ -99,10 +100,10 @@ jobs:
           {
             echo "## Frontend deployment failed"
             echo ""
-            echo "1. **IDs** — Vercel → Project → Settings → General → copy **Project ID**"
-            echo "2. **Org ID** — Vercel → Account or Team → Settings → copy **ID** (team if project is under a team)"
-            echo "3. **Token** — [vercel.com/account/tokens](https://vercel.com/account/tokens) with access to this project"
-            echo "4. Set \`VITE_API_URL\` on Vercel (and optionally GitHub secret for pre-flight build)"
+            echo "1. **Root directory** — Vercel project Root Directory should be \`web\`; deploy runs from repo root"
+            echo "2. **IDs** — Vercel → Project → Settings → General → **Project ID**"
+            echo "3. **Org ID** — Vercel → Account or Team → Settings → **ID**"
+            echo "4. **Token** — [vercel.com/account/tokens](https://vercel.com/account/tokens)"
             echo ""
-            echo "**Skip this workflow** if Vercel already auto-deploys on git push — you only need one deploy path."
+            echo "**Skip this workflow** if Vercel already auto-deploys on git push."
           } >> "$GITHUB_STEP_SUMMARY"
