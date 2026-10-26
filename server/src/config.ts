@@ -28,8 +28,19 @@ function port(fallback: number): number {
  * Everything has a working default that matches docker-compose.yml, so the
  * server runs with no .env at all. Create server/.env to override any of these.
  */
+function normalizeDatabaseUrl(raw: string): string {
+  let url = raw.trim();
+  if (
+    (url.startsWith('"') && url.endsWith('"')) ||
+    (url.startsWith("'") && url.endsWith("'"))
+  ) {
+    url = url.slice(1, -1).trim();
+  }
+  return url;
+}
+
 export const config = {
-  databaseUrl: env('DATABASE_URL'),
+  databaseUrl: normalizeDatabaseUrl(env('DATABASE_URL')),
   jwtSecret: env('JWT_SECRET'),
   port: port(4000),
   clientOrigin: env('CLIENT_ORIGIN'),
