@@ -42,6 +42,10 @@ http://localhost:5050 — sign in with `admin@verdant.local` / `admin`. The
 **Verdant (local)** server is pre-registered; when it asks for the database
 password, use `verdant`.
 
+## Deployment
+
+Production deploys run only via GitHub Actions on push to `main` (path-filtered). Vercel and Render Git auto-deploy are disabled in config
+
 ## Configuration
 
 Every setting has a working default that matches `docker-compose.yml`, so no

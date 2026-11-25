@@ -105,5 +105,4 @@ jobs:
             echo "3. **Org ID** — Vercel → Account or Team → Settings → **ID**"
             echo "4. **Token** — [vercel.com/account/tokens](https://vercel.com/account/tokens)"
             echo ""
-            echo "**Skip this workflow** if Vercel already auto-deploys on git push."
           } >> "$GITHUB_STEP_SUMMARY"
